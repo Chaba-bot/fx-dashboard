@@ -1,0 +1,36 @@
+name: update fx data
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 1時間ごと
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Python実行
+        run: |
+          python - <<EOF
+          import json
+          import random
+
+          result = {
+              "strategy": "auto",
+              "trades": random.randint(1, 20),
+              "profit": round(random.uniform(-10, 20), 2)
+          }
+
+          with open("result.json", "w") as f:
+              json.dump(result, f)
+          EOF
+
+      - name: コミット＆プッシュ
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add result.json
+          git commit -m "update result" || echo "no changes"
+          git push
