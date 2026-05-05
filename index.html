@@ -1,1 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FX Dashboard</title>
+</head>
+<body>
+  <h1>戦略結果</h1>
+  <div id="result">読み込み中...</div>
 
+  <script>
+    fetch('result.json')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('result').innerHTML =
+          "戦略: " + data.strategy + "<br>" +
+          "トレード数: " + data.trades + "<br>" +
+          "利益: " + data.profit;
+      });
+  </script>
+</body>
+</html>
