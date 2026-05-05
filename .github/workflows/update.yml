@@ -11,21 +11,72 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Python実行
-        run: |
-          python - <<EOF
-          import json
-          import random
+     - name: Python実行
+  run: |
+    python - <<EOF
+    import json
+    import random
 
-          result = {
-              "strategy": "auto",
-              "trades": random.randint(1, 20),
-              "profit": round(random.uniform(-10, 20), 2)
-          }
+    # ダミー価格データ（本当はAPIにする）
+    prices = [100 + random.uniform(-1,1) for _ in range(100)]
 
-          with open("result.json", "w") as f:
-              json.dump(result, f)
-          EOF
+    # 移動平均
+    def ma(data, period):
+        return [sum(data[i-period:i])/period if i>=period else None for i in range(len(data))]
+
+    ma_short = ma(prices, 5)
+    ma_long = ma(prices, 20)
+
+    # シグナル生成
+    signals = []
+    for i in range(len(prices)):
+        if ma_short[i] and ma_long[i]:
+            if ma_short[i] > ma_long[i]:
+                signals.append(1)
+            else:
+                signals.append(-1)
+        else:
+            signals.append(0)
+
+    # バックテスト
+    position = 0
+    entry = 0
+    profit = 0
+    trades = 0
+    wins = 0
+
+    for i in range(len(prices)):
+        s = signals[i]
+        price = prices[i]
+
+        if position == 0 and s != 0:
+            position = s
+            entry = price
+
+        elif position != 0 and s == -position:
+            p = price - entry
+            if position == -1:
+                p *= -1
+
+            profit += p
+            trades += 1
+            if p > 0:
+                wins += 1
+
+            position = 0
+
+    win_rate = wins / trades if trades > 0 else 0
+
+    result = {
+        "strategy": "MA_cross",
+        "trades": trades,
+        "profit": round(profit, 2),
+        "win_rate": round(win_rate, 2)
+    }
+
+    with open("result.json", "w") as f:
+        json.dump(result, f)
+    EOF
 
       - name: コミット＆プッシュ
         run: |
